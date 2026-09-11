@@ -259,6 +259,49 @@ export default function CropPhoto() {
           </div>
         )}
       </div>
+     {/* SEO & Informational Content Section */}
+      <section style={{ maxWidth: '900px', margin: '60px auto 0', padding: '30px 20px', borderTop: '1px solid #334155', color: '#cbd5e1' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px' }}>
+          Free Online Image Cropper – Trim and Frame Photos Instantly
+        </h2>
+        <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '24px' }}>
+          Easily cut unwanted borders, reframe portraits, or crop your images to preset aspect ratios like 1:1 square, 16:9 widescreen, or custom selections. Quick Photo Editor gives you pixel-accurate cropping controls without downloading any heavy software.
+        </p>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          How to Crop a Photo Online
+        </h3>
+        <ol style={{ paddingLeft: '20px', lineHeight: '1.8', color: '#cbd5e1', marginBottom: '24px' }}>
+          <li>Upload your photo using the file uploader.</li>
+          <li>Drag the crop boundary box to highlight the exact subject area you want to keep.</li>
+          <li>Preview the cropped frame in real time.</li>
+          <li>Click Download to save your framed picture.</li>
+        </ol>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          Key Features
+        </h3>
+        <ul style={{ paddingLeft: '20px', lineHeight: '1.8', color: '#cbd5e1', marginBottom: '24px' }}>
+          <li><strong>Freeform & Fixed Framing:</strong> Choose free manual cropping or lock proportions for avatars and banners.</li>
+          <li><strong>Zero Data Uploads:</strong> Cropping runs locally in your browser to maintain strict personal privacy.</li>
+          <li><strong>High Resolution Export:</strong> Keeps original pixel density intact without adding compression noise.</li>
+        </ul>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          Frequently Asked Questions
+        </h3>
+        <div style={{ lineHeight: '1.7' }}>
+          <p><strong>Does cropping reduce the quality of my photo?</strong></p>
+          <p style={{ color: '#94a3b8', marginBottom: '16px' }}>
+            No, the selected region keeps its original resolution and clarity. Only the discarded outer areas are removed.
+          </p>
+
+          <p><strong>Can I crop photos for social media profile pictures?</strong></p>
+          <p style={{ color: '#94a3b8', marginBottom: '16px' }}>
+            Yes, you can trim any image into standard square dimensions ideal for Instagram, LinkedIn, or WhatsApp profile photos.
+          </p>
+        </div>
+      </section>    
     </div>
   );
 }
