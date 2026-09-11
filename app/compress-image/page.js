@@ -1,6 +1,6 @@
  'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function CompressImage() {
@@ -10,7 +10,6 @@ export default function CompressImage() {
   const [compressedSize, setCompressedSize] = useState(0);
   const [quality, setQuality] = useState(70);
   const [isProcessing, setIsProcessing] = useState(false);
-  const imageRef = useRef(null);
 
   const formatSize = (bytes) => {
     if (bytes === 0) return '0 KB';
@@ -42,7 +41,6 @@ export default function CompressImage() {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
 
-      // Real-time canvas compression
       canvas.toBlob(
         (blob) => {
           if (blob) {
@@ -57,11 +55,11 @@ export default function CompressImage() {
     };
   };
 
-  const handleQualityChange = (e) => {
-    const newQuality = Number(e.target.value);
-    setQuality(newQuality);
+  const handleQualityChange = (newQuality) => {
+    const q = Number(newQuality);
+    setQuality(q);
     if (originalImage) {
-      compress(originalImage, newQuality);
+      compress(originalImage, q);
     }
   };
 
@@ -80,7 +78,7 @@ export default function CompressImage() {
           Live Image Compressor
         </h1>
         <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
-          Adjust quality slider to see the reduced file size instantly in real-time.
+          Select target compression percentage or use slider to see real-time file size reduction.
         </p>
 
         {/* Upload Box */}
@@ -93,16 +91,48 @@ export default function CompressImage() {
           </label>
         )}
 
-        {/* Live Controls & Realtime Size Panel */}
+        {/* Controls & Realtime Size Panel */}
         {originalImage && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '20px' }}>
             {/* Control Sidebar */}
             <div style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '16px', border: '1px solid #334155', height: 'fit-content' }}>
-              <h3 style={{ fontSize: '16px', marginBottom: '16px', color: '#e2e8f0' }}>Compression Level</h3>
+              <h3 style={{ fontSize: '16px', marginBottom: '14px', color: '#e2e8f0' }}>Compression Level</h3>
               
+              {/* Quick % Reduction Presets */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Quick Presets (Quality %):</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[
+                    { label: 'Low (40%)', val: 40 },
+                    { label: 'Medium (65%)', val: 65 },
+                    { label: 'High (80%)', val: 80 },
+                    { label: 'Best (95%)', val: 95 }
+                  ].map((preset) => (
+                    <button
+                      key={preset.val}
+                      onClick={() => handleQualityChange(preset.val)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 4px',
+                        backgroundColor: quality === preset.val ? '#38bdf8' : '#0f172a',
+                        color: quality === preset.val ? '#0f172a' : '#cbd5e1',
+                        border: '1px solid #334155',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Slider */}
               <div style={{ marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
-                  <span>Quality</span>
+                  <span>Custom Quality Slider</span>
                   <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>{quality}%</span>
                 </div>
                 <input
@@ -110,7 +140,7 @@ export default function CompressImage() {
                   min="5"
                   max="100"
                   value={quality}
-                  onChange={handleQualityChange}
+                  onChange={(e) => handleQualityChange(e.target.value)}
                   style={{ width: '100%', cursor: 'pointer' }}
                 />
               </div>
@@ -126,11 +156,12 @@ export default function CompressImage() {
                   <strong style={{ color: '#34d399' }}>{formatSize(compressedSize)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', paddingTop: '8px', borderTop: '1px solid #1e293b' }}>
-                  <span style={{ color: '#94a3b8' }}>Saved:</span>
-                  <strong style={{ color: '#f59e0b' }}>{reductionPercentage}% reduction</strong>
+                  <span style={{ color: '#94a3b8' }}>Total Saved:</span>
+                  <strong style={{ color: '#f59e0b' }}>{reductionPercentage}% smaller</strong>
                 </div>
               </div>
 
+              {/* Buttons */}
               <div style={{ display: 'flex', gap: '10px' }}>
                 <a
                   href={compressedImage}
@@ -149,7 +180,7 @@ export default function CompressImage() {
                     opacity: isProcessing ? 0.6 : 1
                   }}
                 >
-                  {isProcessing ? 'Calculating...' : 'Download Image'}
+                  {isProcessing ? 'Compressing...' : 'Download Image'}
                 </a>
                 <button
                   onClick={() => { setOriginalImage(null); setCompressedImage(null); }}
