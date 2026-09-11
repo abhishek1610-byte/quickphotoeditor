@@ -24,6 +24,9 @@
       follow: true,
     },
   },
+  verification: {
+    google: 'YEED3ZCzP6rlvh8DKF_GueN59zenduTvr_bcSreYPEw',
+  },
   alternates: {
     canonical: 'https://quickphotoeditor.vercel.app',
   },
@@ -43,7 +46,6 @@
 };
 
 export default function RootLayout({ children }) {
-  // WebApplication JSON-LD Schema for Google Search Rich Snippets
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
@@ -70,6 +72,7 @@ export default function RootLayout({ children }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="theme-color" content="#0f172a" />
+        <meta name="google-site-verification" content="YEED3ZCzP6rlvh8DKF_GueN59zenduTvr_bcSreYPEw" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
