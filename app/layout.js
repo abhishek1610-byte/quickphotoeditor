@@ -16,6 +16,19 @@
     'online photo editor'
   ],
   authors: [{ name: 'QuickPhotoEditor Team' }],
+  openGraph: {
+    title: 'QuickPhotoEditor - Free Online Image Compressor, Resizer & Editor',
+    description: 'Compress, resize, crop, and edit images right in your browser with complete privacy.',
+    url: 'https://quickphotoeditor.vercel.app',
+    siteName: 'QuickPhotoEditor',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'QuickPhotoEditor - Free Online Image Tools',
+    description: 'Edit, resize, and compress your photos instantly with zero uploads.',
+  },
   robots: {
     index: true,
     follow: true,
