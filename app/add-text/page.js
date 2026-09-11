@@ -297,6 +297,49 @@ export default function AddText() {
           </div>
         )}
       </div>
+     {/* SEO & Informational Content Section */}
+      <section style={{ maxWidth: '900px', margin: '60px auto 0', padding: '30px 20px', borderTop: '1px solid #334155', color: '#cbd5e1' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px' }}>
+          Free Online Text on Photo Editor – Add Captions, Watermarks & Typography
+        </h2>
+        <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '24px' }}>
+          Add custom labels, captions, memes, or personalized watermarks directly onto your photos. Quick Photo Editor gives you instant controls for font styling, placement, and color palettes right inside your browser without installing complex desktop software.
+        </p>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          How to Add Text to an Image
+        </h3>
+        <ol style={{ paddingLeft: '20px', lineHeight: '1.8', color: '#cbd5e1', marginBottom: '24px' }}>
+          <li>Upload your photo from your device.</li>
+          <li>Type your custom text in the input box.</li>
+          <li>Customize the font size, color, and positioning to complement your picture.</li>
+          <li>Click Download to save your customized graphic immediately.</li>
+        </ol>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          Key Features
+        </h3>
+        <ul style={{ paddingLeft: '20px', lineHeight: '1.8', color: '#cbd5e1', marginBottom: '24px' }}>
+          <li><strong>Instant Watermarking:</strong> Protect personal photography or branding assets effortlessly.</li>
+          <li><strong>Client-Side Processing:</strong> No server uploads; images render safely inside your local browser memory.</li>
+          <li><strong>Crisp Typography:</strong> Preserves original photo dimensions and produces sharp text overlays.</li>
+        </ul>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          Frequently Asked Questions
+        </h3>
+        <div style={{ lineHeight: '1.7' }}>
+          <p><strong>Can I use this tool to create memes?</strong></p>
+          <p style={{ color: '#94a3b8', marginBottom: '16px' }}>
+            Yes, you can upload meme templates and overlay bold header or footer text quickly.
+          </p>
+
+          <p><strong>Does adding text reduce the photo quality?</strong></p>
+          <p style={{ color: '#94a3b8', marginBottom: '16px' }}>
+            No, the rendered canvas uses your original image resolution, ensuring no loss in photo clarity.
+          </p>
+        </div>
+      </section>    
     </div>
   );
 }
