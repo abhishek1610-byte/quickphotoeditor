@@ -304,6 +304,49 @@ export default function RemoveBg() {
           </div>
         )}
       </div>
+     {/* SEO & Informational Content Section */}
+      <section style={{ maxWidth: '900px', margin: '60px auto 0', padding: '30px 20px', borderTop: '1px solid #334155', color: '#cbd5e1' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px' }}>
+          Free Background Remover – Create Transparent Cutouts Instantly
+        </h2>
+        <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '24px' }}>
+          Remove backgrounds from portraits, product images, and logos with automated browser-based processing. Quick Photo Editor lets you create clean transparent PNG cutouts ready for e-commerce listings, graphic design, and social media posts.
+        </p>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          How to Remove Image Backgrounds
+        </h3>
+        <ol style={{ paddingLeft: '20px', lineHeight: '1.8', color: '#cbd5e1', marginBottom: '24px' }}>
+          <li>Select and upload your photo.</li>
+          <li>Let the tool process your image and identify the main subject.</li>
+          <li>Review the transparent cutout in the live preview.</li>
+          <li>Click Download to save your transparent PNG file.</li>
+        </ol>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          Key Features
+        </h3>
+        <ul style={{ paddingLeft: '20px', lineHeight: '1.8', color: '#cbd5e1', marginBottom: '24px' }}>
+          <li><strong>Transparent PNG Export:</strong> Produces clean edges ready to place on any new backdrop.</li>
+          <li><strong>Client-Side Processing:</strong> No server data transfers; your photos stay secure on your device.</li>
+          <li><strong>Zero Cost:</strong> Completely free to use with no subscription required.</li>
+        </ul>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          Frequently Asked Questions
+        </h3>
+        <div style={{ lineHeight: '1.7' }}>
+          <p><strong>What format is the downloaded file?</strong></p>
+          <p style={{ color: '#94a3b8', marginBottom: '16px' }}>
+            The output downloads as a transparent PNG so you can easily drop it onto any background color or design layout.
+          </p>
+
+          <p><strong>Which photos yield the cleanest cutouts?</strong></p>
+          <p style={{ color: '#94a3b8', marginBottom: '16px' }}>
+            Images with clear contrast between the subject and the background produce the sharpest results.
+          </p>
+        </div>
+      </section>    
     </div>
   );
 }
