@@ -8,6 +8,8 @@ export default function CompressImage() {
   const [compressedImage, setCompressedImage] = useState(null);
   const [originalSize, setOriginalSize] = useState(0);
   const [compressedSize, setCompressedSize] = useState(0);
+  const [mode, setMode] = useState('manual'); // 'manual' | 'percent'
+  const [targetKb, setTargetKb] = useState(50);
   const [quality, setQuality] = useState(70);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -21,16 +23,19 @@ export default function CompressImage() {
     const file = e.target.files[0];
     if (file) {
       setOriginalSize(file.size);
+      const defaultKb = Math.min(Math.round(file.size / 1024 / 2), 100);
+      setTargetKb(defaultKb || 50);
+
       const reader = new FileReader();
       reader.onload = (event) => {
         setOriginalImage(event.target.result);
-        compress(event.target.result, quality);
+        compressByQuality(event.target.result, quality);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const compress = (imageSrc, currentQuality) => {
+  const compressByQuality = (imageSrc, currentQuality) => {
     setIsProcessing(true);
     const img = new Image();
     img.src = imageSrc;
@@ -55,11 +60,75 @@ export default function CompressImage() {
     };
   };
 
-  const handleQualityChange = (newQuality) => {
-    const q = Number(newQuality);
+  // Manual Target Size (Iterative Canvas Search)
+  const compressToExactKb = (imageSrc, targetSizeInKb) => {
+    if (!targetSizeInKb || targetSizeInKb <= 0) return;
+    setIsProcessing(true);
+    const targetBytes = targetSizeInKb * 1024;
+
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      let min = 0.01;
+      let max = 1.0;
+      let bestBlob = null;
+      let iterations = 0;
+
+      const attempt = () => {
+        const mid = (min + max) / 2;
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              setIsProcessing(false);
+              return;
+            }
+
+            iterations++;
+            bestBlob = blob;
+
+            if (Math.abs(blob.size - targetBytes) < 2048 || iterations >= 8) {
+              setCompressedSize(blob.size);
+              setCompressedImage(URL.createObjectURL(blob));
+              setQuality(Math.round(mid * 100));
+              setIsProcessing(false);
+              return;
+            }
+
+            if (blob.size > targetBytes) {
+              max = mid;
+            } else {
+              min = mid;
+            }
+            attempt();
+          },
+          'image/jpeg',
+          mid
+        );
+      };
+
+      attempt();
+    };
+  };
+
+  const handleManualKbChange = (val) => {
+    const kb = Number(val);
+    setTargetKb(kb);
+    if (originalImage && kb > 0) {
+      compressToExactKb(originalImage, kb);
+    }
+  };
+
+  const handleQualityChange = (val) => {
+    const q = Number(val);
     setQuality(q);
     if (originalImage) {
-      compress(originalImage, q);
+      compressByQuality(originalImage, q);
     }
   };
 
@@ -75,13 +144,12 @@ export default function CompressImage() {
         </Link>
 
         <h1 style={{ fontSize: '28px', fontWeight: '800', marginTop: '16px', marginBottom: '8px' }}>
-          Live Image Compressor
+          Smart Image Compressor
         </h1>
         <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
-          Select target compression percentage or use slider to see real-time file size reduction.
+          Compress photo manually to exact KB limit (e.g. 20KB, 50KB) or use quality sliders.
         </p>
 
-        {/* Upload Box */}
         {!originalImage && (
           <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '200px', border: '2px dashed #334155', borderRadius: '16px', cursor: 'pointer', backgroundColor: '#1e293b' }}>
             <span style={{ fontSize: '32px', marginBottom: '8px' }}>📁</span>
@@ -91,68 +159,113 @@ export default function CompressImage() {
           </label>
         )}
 
-        {/* Controls & Realtime Size Panel */}
         {originalImage && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '20px' }}>
             {/* Control Sidebar */}
             <div style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '16px', border: '1px solid #334155', height: 'fit-content' }}>
-              <h3 style={{ fontSize: '16px', marginBottom: '14px', color: '#e2e8f0' }}>Compression Level</h3>
               
-              {/* Quick % Reduction Presets */}
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>Quick Presets (Quality %):</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {[
-                    { label: 'Low (40%)', val: 40 },
-                    { label: 'Medium (65%)', val: 65 },
-                    { label: 'High (80%)', val: 80 },
-                    { label: 'Best (95%)', val: 95 }
-                  ].map((preset) => (
-                    <button
-                      key={preset.val}
-                      onClick={() => handleQualityChange(preset.val)}
-                      style={{
-                        flex: 1,
-                        padding: '8px 4px',
-                        backgroundColor: quality === preset.val ? '#38bdf8' : '#0f172a',
-                        color: quality === preset.val ? '#0f172a' : '#cbd5e1',
-                        border: '1px solid #334155',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
+              {/* Tab Selector */}
+              <div style={{ display: 'flex', backgroundColor: '#0f172a', padding: '4px', borderRadius: '10px', marginBottom: '20px', border: '1px solid #334155' }}>
+                <button
+                  onClick={() => setMode('manual')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: mode === 'manual' ? '#2563eb' : 'transparent',
+                    color: mode === 'manual' ? '#fff' : '#94a3b8'
+                  }}
+                >
+                  Manual Exact KB
+                </button>
+                <button
+                  onClick={() => setMode('percent')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: mode === 'percent' ? '#2563eb' : 'transparent',
+                    color: mode === 'percent' ? '#fff' : '#94a3b8'
+                  }}
+                >
+                  By Quality Slider
+                </button>
               </div>
 
-              {/* Slider */}
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
-                  <span>Custom Quality Slider</span>
-                  <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>{quality}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="5"
-                  max="100"
-                  value={quality}
-                  onChange={(e) => handleQualityChange(e.target.value)}
-                  style={{ width: '100%', cursor: 'pointer' }}
-                />
-              </div>
+              {/* Mode 1: Manual KB */}
+              {mode === 'manual' ? (
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', color: '#94a3b8', marginBottom: '6px' }}>
+                    Type Exact Target Size (KB):
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                    <input
+                      type="number"
+                      value={targetKb}
+                      onChange={(e) => handleManualKbChange(e.target.value)}
+                      placeholder="e.g. 50"
+                      style={{ flex: 1, padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '15px', fontWeight: 'bold' }}
+                    />
+                    <span style={{ alignSelf: 'center', fontSize: '14px', color: '#94a3b8' }}>KB</span>
+                  </div>
 
-              {/* Realtime Size Comparison Badge */}
+                  {/* Quick Form Buttons */}
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {[20, 50, 100, 200].map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => handleManualKbChange(num)}
+                        style={{
+                          flex: 1,
+                          padding: '6px 0',
+                          backgroundColor: targetKb === num ? '#38bdf8' : '#0f172a',
+                          color: targetKb === num ? '#0f172a' : '#cbd5e1',
+                          border: '1px solid #334155',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {num} KB
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* Mode 2: Quality Slider */
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
+                    <span>Quality Level</span>
+                    <strong style={{ color: '#38bdf8' }}>{quality}%</strong>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="100"
+                    value={quality}
+                    onChange={(e) => handleQualityChange(e.target.value)}
+                    style={{ width: '100%', cursor: 'pointer' }}
+                  />
+                </div>
+              )}
+
+              {/* Realtime Size Comparison */}
               <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
                   <span style={{ color: '#94a3b8' }}>Original Size:</span>
                   <strong style={{ color: '#e2e8f0' }}>{formatSize(originalSize)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-                  <span style={{ color: '#38bdf8' }}>Compressed Size:</span>
+                  <span style={{ color: '#38bdf8' }}>Output File Size:</span>
                   <strong style={{ color: '#34d399' }}>{formatSize(compressedSize)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', paddingTop: '8px', borderTop: '1px solid #1e293b' }}>
@@ -161,11 +274,11 @@ export default function CompressImage() {
                 </div>
               </div>
 
-              {/* Buttons */}
+              {/* Action Buttons */}
               <div style={{ display: 'flex', gap: '10px' }}>
                 <a
                   href={compressedImage}
-                  download="compressed-image.jpg"
+                  download="compressed-photo.jpg"
                   style={{
                     flex: 1,
                     textAlign: 'center',
@@ -180,7 +293,7 @@ export default function CompressImage() {
                     opacity: isProcessing ? 0.6 : 1
                   }}
                 >
-                  {isProcessing ? 'Compressing...' : 'Download Image'}
+                  {isProcessing ? 'Calculating...' : 'Download Image'}
                 </a>
                 <button
                   onClick={() => { setOriginalImage(null); setCompressedImage(null); }}
@@ -193,12 +306,12 @@ export default function CompressImage() {
 
             {/* Live Visual Preview */}
             <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '16px', border: '1px solid #334155', textAlign: 'center' }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Live Quality Preview</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>Live Output Preview</div>
               {compressedImage && (
                 <img
                   src={compressedImage}
                   alt="Live Preview"
-                  style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain', borderRadius: '8px' }}
+                  style={{ maxWidth: '100%', maxHeight: '420px', objectFit: 'contain', borderRadius: '8px' }}
                 />
               )}
             </div>
