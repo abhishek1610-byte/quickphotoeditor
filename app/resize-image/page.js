@@ -320,6 +320,49 @@ export default function ResizeImage() {
           </div>
         )}
       </div>
+     {/* SEO & Informational Content Section */}
+      <section style={{ maxWidth: '900px', margin: '60px auto 0', padding: '30px 20px', borderTop: '1px solid #334155', color: '#cbd5e1' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#ffffff', marginBottom: '16px' }}>
+          Free Online Image Resizer – Change Dimensions Easily
+        </h2>
+        <p style={{ color: '#94a3b8', lineHeight: '1.7', marginBottom: '24px' }}>
+          Quick Photo Editor's image resizer lets you scale images to exact pixel dimensions or percentages instantly. Perfect for preparing photos for social media banners, passports, resumes, or web publishing without blurry distortion.
+        </p>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          How to Resize Images
+        </h3>
+        <ol style={{ paddingLeft: '20px', lineHeight: '1.8', color: '#cbd5e1', marginBottom: '24px' }}>
+          <li>Select and upload your picture.</li>
+          <li>Enter your desired width and height, or lock the aspect ratio for automatic scaling.</li>
+          <li>Check the visual preview to ensure your dimensions fit perfectly.</li>
+          <li>Click Download to retrieve your resized image.</li>
+        </ol>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          Key Features
+        </h3>
+        <ul style={{ paddingLeft: '20px', lineHeight: '1.8', color: '#cbd5e1', marginBottom: '24px' }}>
+          <li><strong>Aspect Ratio Lock:</strong> Keep images proportionate without stretching or squishing.</li>
+          <li><strong>Local Browser Engine:</strong> Zero server uploads ensures 100% privacy and lightning-fast resizing.</li>
+          <li><strong>Multiple Formats:</strong> Fully compatible with PNG, JPG, and WebP.</li>
+        </ul>
+
+        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#ffffff', marginTop: '24px', marginBottom: '12px' }}>
+          Frequently Asked Questions
+        </h3>
+        <div style={{ lineHeight: '1.7' }}>
+          <p><strong>Will resizing make my image blurry?</strong></p>
+          <p style={{ color: '#94a3b8', marginBottom: '16px' }}>
+            Downscaling preserves sharp detail. Upscaling past original dimensions can cause blur, so keeping aspect ratio locked provides optimal quality.
+          </p>
+
+          <p><strong>Is there any limit on file dimensions?</strong></p>
+          <p style={{ color: '#94a3b8', marginBottom: '16px' }}>
+            No, you can set custom pixel dimensions suitable for banners, profile pictures, or standard print formats.
+          </p>
+        </div>
+      </section>    
     </div>
   );
 }
