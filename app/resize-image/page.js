@@ -1,104 +1,324 @@
-'use client';
-import { useState, useRef } from 'react';
+ 'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function ResizeImage() {
-  const [image, setImage] = useState(null);
+  const [originalImage, setOriginalImage] = useState(null);
+  const [resizedImage, setResizedImage] = useState(null);
+  const [originalSize, setOriginalSize] = useState(0);
+  const [estimatedSize, setEstimatedSize] = useState(0);
+  const [origDimensions, setOrigDimensions] = useState({ width: 0, height: 0 });
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
-  const [resizedUrl, setResizedUrl] = useState('');
-  const imgRef = useRef(null);
+  const [percentage, setPercentage] = useState(100);
+  const [mode, setMode] = useState('percentage'); // 'percentage' | 'pixels'
+  const [maintainAspect, setMaintainAspect] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const formatSize = (bytes) => {
+    if (bytes === 0) return '0 KB';
+    const kb = bytes / 1024;
+    return kb > 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(1)} KB`;
+  };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.src = url;
-      img.onload = () => {
-        setImage(url);
-        setWidth(img.width);
-        setHeight(img.height);
-        imgRef.current = img;
+      setOriginalSize(file.size);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          setOriginalImage(event.target.result);
+          setOrigDimensions({ width: img.width, height: img.height });
+          setWidth(img.width);
+          setHeight(img.height);
+          setPercentage(100);
+          generateResize(event.target.result, img.width, img.height);
+        };
       };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleResize = () => {
-    if (!imgRef.current) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = Number(width);
-    canvas.height = Number(height);
-    const ctx = canvas.getContext('2d');
-    
-    ctx.drawImage(imgRef.current, 0, 0, Number(width), Number(height));
-    const result = canvas.toDataURL('image/jpeg', 0.9);
-    setResizedUrl(result);
+  const generateResize = (imageSrc, targetW, targetH) => {
+    if (!targetW || !targetH || targetW <= 0 || targetH <= 0) return;
+    setIsProcessing(true);
+    const img = new Image();
+    img.src = imageSrc;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            setEstimatedSize(blob.size);
+            setResizedImage(URL.createObjectURL(blob));
+            setIsProcessing(false);
+          }
+        },
+        'image/jpeg',
+        0.9
+      );
+    };
+  };
+
+  // Percentage slider change
+  const handlePercentageChange = (pct) => {
+    const newPct = Number(pct);
+    setPercentage(newPct);
+    const newW = Math.round((origDimensions.width * newPct) / 100);
+    const newH = Math.round((origDimensions.height * newPct) / 100);
+    setWidth(newW);
+    setHeight(newH);
+    if (originalImage) {
+      generateResize(originalImage, newW, newH);
+    }
+  };
+
+  // Pixel Width change
+  const handleWidthChange = (val) => {
+    const newW = Number(val);
+    setWidth(newW);
+    let newH = height;
+    if (maintainAspect && origDimensions.width > 0) {
+      newH = Math.round((newW / origDimensions.width) * origDimensions.height);
+      setHeight(newH);
+    }
+    if (origDimensions.width > 0) {
+      setPercentage(Math.round((newW / origDimensions.width) * 100));
+    }
+    if (originalImage) {
+      generateResize(originalImage, newW, newH);
+    }
+  };
+
+  // Pixel Height change
+  const handleHeightChange = (val) => {
+    const newH = Number(val);
+    setHeight(newH);
+    let newW = width;
+    if (maintainAspect && origDimensions.height > 0) {
+      newW = Math.round((newH / origDimensions.height) * origDimensions.width);
+      setWidth(newW);
+    }
+    if (origDimensions.height > 0) {
+      setPercentage(Math.round((newH / origDimensions.height) * 100));
+    }
+    if (originalImage) {
+      generateResize(originalImage, newW, newH);
+    }
   };
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh', padding: '30px 16px' }}>
-      <div style={{ maxWidth: '550px', margin: '0 auto', backgroundColor: '#ffffff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        
-        <Link href="/" style={{ color: '#2563eb', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', fontFamily: 'system-ui, sans-serif', padding: '30px 16px' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>
           ← Back to All Tools
         </Link>
-        
-        <h2 style={{ fontSize: '24px', color: '#1e293b', marginTop: '16px', marginBottom: '8px' }}>Photo Resizer</h2>
-        <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '20px' }}>Upload an image to resize its dimensions.</p>
 
-        <input 
-          type="file" 
-          accept="image/*" 
-          onChange={handleImageUpload}
-          style={{ marginBottom: '20px', display: 'block', width: '100%' }}
-        />
+        <h1 style={{ fontSize: '28px', fontWeight: '800', marginTop: '16px', marginBottom: '8px' }}>
+          Image Resizer (Pixels & Percentage)
+        </h1>
+        <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
+          Resize image dimensions by percentage slider or exact width/height with live size tracking.
+        </p>
 
-        {image && (
-          <div style={{ marginTop: '20px' }}>
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Width (px)</label>
-                <input 
-                  type="number" 
-                  value={width} 
-                  onChange={(e) => setWidth(e.target.value)}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
-                />
+        {/* Upload Box */}
+        {!originalImage && (
+          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '200px', border: '2px dashed #334155', borderRadius: '16px', cursor: 'pointer', backgroundColor: '#1e293b' }}>
+            <span style={{ fontSize: '32px', marginBottom: '8px' }}>📏</span>
+            <span style={{ fontWeight: '600', color: '#38bdf8' }}>Select or Drop Image to Resize</span>
+            <span style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>JPG, PNG, WebP supported</span>
+            <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+          </label>
+        )}
+
+        {/* Live Controls & Sidebar */}
+        {originalImage && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '20px' }}>
+            <div style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '16px', border: '1px solid #334155', height: 'fit-content' }}>
+              
+              {/* Tab Selector: Percentage vs Pixels */}
+              <div style={{ display: 'flex', backgroundColor: '#0f172a', padding: '4px', borderRadius: '10px', marginBottom: '20px', border: '1px solid #334155' }}>
+                <button
+                  onClick={() => setMode('percentage')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: mode === 'percentage' ? '#2563eb' : 'transparent',
+                    color: mode === 'percentage' ? '#fff' : '#94a3b8'
+                  }}
+                >
+                  By Percentage (%)
+                </button>
+                <button
+                  onClick={() => setMode('pixels')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 'bold',
+                    backgroundColor: mode === 'pixels' ? '#2563eb' : 'transparent',
+                    color: mode === 'pixels' ? '#fff' : '#94a3b8'
+                  }}
+                >
+                  By Pixels (W×H)
+                </button>
               </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Height (px)</label>
-                <input 
-                  type="number" 
-                  value={height} 
-                  onChange={(e) => setHeight(e.target.value)}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', boxSizing: 'border-box' }}
-                />
+
+              {/* Mode 1: Percentage Controls */}
+              {mode === 'percentage' && (
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                    <span>Scale Percentage</span>
+                    <strong style={{ color: '#38bdf8', fontSize: '15px' }}>{percentage}%</strong>
+                  </div>
+                  <input
+                    type="range"
+                    min="10"
+                    max="200"
+                    value={percentage}
+                    onChange={(e) => handlePercentageChange(e.target.value)}
+                    style={{ width: '100%', cursor: 'pointer' }}
+                  />
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                    {[25, 50, 75, 80, 100].map((val) => (
+                      <button
+                        key={val}
+                        onClick={() => handlePercentageChange(val)}
+                        style={{
+                          flex: 1,
+                          padding: '6px 0',
+                          backgroundColor: percentage === val ? '#38bdf8' : '#0f172a',
+                          color: percentage === val ? '#0f172a' : '#cbd5e1',
+                          border: '1px solid #334155',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {val}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mode 2: Pixel Controls */}
+              {mode === 'pixels' && (
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>Width (px)</label>
+                      <input
+                        type="number"
+                        value={width}
+                        onChange={(e) => handleWidthChange(e.target.value)}
+                        style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>Height (px)</label>
+                      <input
+                        type="number"
+                        value={height}
+                        onChange={(e) => handleHeightChange(e.target.value)}
+                        style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#cbd5e1', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={maintainAspect}
+                      onChange={(e) => setMaintainAspect(e.target.checked)}
+                    />
+                    Maintain aspect ratio
+                  </label>
+                </div>
+              )}
+
+              {/* Realtime Size & Dimensions Panel */}
+              <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                  <span style={{ color: '#94a3b8' }}>Original Dimension:</span>
+                  <strong style={{ color: '#e2e8f0' }}>{origDimensions.width} × {origDimensions.height} px</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                  <span style={{ color: '#94a3b8' }}>New Dimension:</span>
+                  <strong style={{ color: '#38bdf8' }}>{width} × {height} px</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                  <span style={{ color: '#94a3b8' }}>Original File Size:</span>
+                  <strong style={{ color: '#e2e8f0' }}>{formatSize(originalSize)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '8px', borderTop: '1px solid #1e293b' }}>
+                  <span style={{ color: '#38bdf8' }}>Estimated Output Size:</span>
+                  <strong style={{ color: '#34d399' }}>{formatSize(estimatedSize)}</strong>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <a
+                  href={resizedImage}
+                  download={`resized-${width}x${height}.jpg`}
+                  style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    padding: '12px',
+                    backgroundColor: '#2563eb',
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    borderRadius: '8px',
+                    fontWeight: '700',
+                    fontSize: '14px',
+                    pointerEvents: isProcessing ? 'none' : 'auto',
+                    opacity: isProcessing ? 0.6 : 1
+                  }}
+                >
+                  {isProcessing ? 'Updating...' : 'Download Resized'}
+                </a>
+                <button
+                  onClick={() => { setOriginalImage(null); setResizedImage(null); }}
+                  style={{ padding: '12px', backgroundColor: '#334155', border: 'none', color: '#cbd5e1', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  Reset
+                </button>
               </div>
             </div>
 
-            <button 
-              onClick={handleResize}
-              style={{ width: '100%', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}
-            >
-              Resize Image
-            </button>
+            {/* Live Visual Preview */}
+            <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '16px', border: '1px solid #334155', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>
+                Live Resized Output ({width} × {height} px)
+              </div>
+              {resizedImage && (
+                <img
+                  src={resizedImage}
+                  alt="Resized Preview"
+                  style={{ maxWidth: '100%', maxHeight: '420px', objectFit: 'contain', borderRadius: '8px' }}
+                />
+              )}
+            </div>
           </div>
         )}
-
-        {resizedUrl && (
-          <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
-            <p style={{ color: '#16a34a', fontWeight: 'bold', marginBottom: '12px' }}>Photo Resized Successfully!</p>
-            <a 
-              href={resizedUrl} 
-              download="resized-photo.jpg"
-              style={{ display: 'inline-block', backgroundColor: '#16a34a', color: '#ffffff', textDecoration: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', fontSize: '14px' }}
-            >
-              Download Resized Photo
-            </a>
-          </div>
-        )}
-
       </div>
     </div>
   );
