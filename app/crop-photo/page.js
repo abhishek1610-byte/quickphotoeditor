@@ -1,6 +1,6 @@
  'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function CropPhoto() {
@@ -8,9 +8,14 @@ export default function CropPhoto() {
   const [croppedImage, setCroppedImage] = useState(null);
   const [originalSize, setOriginalSize] = useState(0);
   const [croppedSize, setCroppedSize] = useState(0);
-  const [aspect, setAspect] = useState('free'); // 'free' | '1:1' | '16:9' | '9:16' | '3:4'
+  const [imgDims, setImgDims] = useState({ width: 0, height: 0 });
+
+  // Crop Controls
+  const [cropW, setCropW] = useState(350);
+  const [cropH, setCropH] = useState(450);
+  const [cropX, setCropX] = useState(0);
+  const [cropY, setCropY] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [cropBox, setCropBox] = useState({ x: 10, y: 10, width: 80, height: 80 });
 
   const formatSize = (bytes) => {
     if (bytes === 0) return '0 KB';
@@ -24,55 +29,37 @@ export default function CropPhoto() {
       setOriginalSize(file.size);
       const reader = new FileReader();
       reader.onload = (event) => {
-        setImageSrc(event.target.result);
-        applyCrop(event.target.result, 10, 10, 80, 80);
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          setImageSrc(event.target.result);
+          setImgDims({ width: img.width, height: img.height });
+          
+          const initialW = Math.round(img.width * 0.7);
+          const initialH = Math.round(img.height * 0.7);
+          setCropW(initialW);
+          setCropH(initialH);
+          setCropX(0);
+          setCropY(0);
+          applyCrop(event.target.result, 0, 0, initialW, initialH);
+        };
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const setRatioPreset = (ratioType) => {
-    setAspect(ratioType);
-    let newW = 80;
-    let newH = 80;
-
-    if (ratioType === '1:1') {
-      newW = 70;
-      newH = 70;
-    } else if (ratioType === '16:9') {
-      newW = 90;
-      newH = 50.6;
-    } else if (ratioType === '9:16') {
-      newW = 50.6;
-      newH = 90;
-    } else if (ratioType === '3:4') {
-      newW = 60;
-      newH = 80;
-    }
-
-    const nextBox = { x: 10, y: 10, width: newW, height: newH };
-    setCropBox(nextBox);
-    if (imageSrc) {
-      applyCrop(imageSrc, nextBox.x, nextBox.y, nextBox.width, nextBox.height);
-    }
-  };
-
-  const applyCrop = (src, xPct, yPct, wPct, hPct) => {
+  const applyCrop = (src, x, y, w, h) => {
+    if (!src || w <= 0 || h <= 0) return;
     setIsProcessing(true);
     const img = new Image();
     img.src = src;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const startX = (img.width * xPct) / 100;
-      const startY = (img.height * yPct) / 100;
-      const cropW = (img.width * wPct) / 100;
-      const cropH = (img.height * hPct) / 100;
-
-      canvas.width = cropW;
-      canvas.height = cropH;
+      canvas.width = w;
+      canvas.height = h;
 
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, startX, startY, cropW, cropH, 0, 0, cropW, cropH);
+      ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
 
       canvas.toBlob(
         (blob) => {
@@ -83,68 +70,136 @@ export default function CropPhoto() {
           }
         },
         'image/jpeg',
-        0.92
+        0.95
       );
     };
   };
 
+  const updateCrop = (x, y, w, h) => {
+    const safeX = Math.max(0, Math.min(Number(x), imgDims.width - 10));
+    const safeY = Math.max(0, Math.min(Number(y), imgDims.height - 10));
+    const safeW = Math.max(10, Math.min(Number(w), imgDims.width - safeX));
+    const safeH = Math.max(10, Math.min(Number(h), imgDims.height - safeY));
+
+    setCropX(safeX);
+    setCropY(safeY);
+    setCropW(safeW);
+    setCropH(safeH);
+
+    if (imageSrc) {
+      applyCrop(imageSrc, safeX, safeY, safeW, safeH);
+    }
+  };
+
+  const applyPresetRatio = (aspect) => {
+    let targetW = cropW;
+    let targetH = cropH;
+
+    if (aspect === '1:1') {
+      const side = Math.min(imgDims.width, imgDims.height, cropW);
+      targetW = side;
+      targetH = side;
+    } else if (aspect === 'passport') {
+      targetW = 350;
+      targetH = 450;
+    } else if (aspect === '16:9') {
+      targetW = Math.min(imgDims.width, 1280);
+      targetH = Math.round((targetW * 9) / 16);
+    }
+
+    updateCrop(cropX, cropY, targetW, targetH);
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', fontFamily: 'system-ui, sans-serif', padding: '30px 16px' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '950px', margin: '0 auto' }}>
         <Link href="/" style={{ color: '#38bdf8', textDecoration: 'none', fontSize: '14px', fontWeight: 'bold' }}>
           ← Back to All Tools
         </Link>
 
         <h1 style={{ fontSize: '28px', fontWeight: '800', marginTop: '16px', marginBottom: '8px' }}>
-          Quick Photo Cropper with Social Presets
+          Crop Photo (Manual Pixels & Ratios)
         </h1>
         <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
-          One-click ratio presets for YouTube, Instagram, Stories, and Passport photos with live file size comparison.
+          Enter exact Width & Height in pixels, adjust cut position, and view live KB output.
         </p>
 
-        {/* Upload Box */}
         {!imageSrc && (
           <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '200px', border: '2px dashed #334155', borderRadius: '16px', cursor: 'pointer', backgroundColor: '#1e293b' }}>
             <span style={{ fontSize: '32px', marginBottom: '8px' }}>✂️</span>
             <span style={{ fontWeight: '600', color: '#38bdf8' }}>Select or Drop Image to Crop</span>
-            <span style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Instant crop & compression</span>
+            <span style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Manual pixel cropping</span>
             <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
           </label>
         )}
 
-        {/* Live Controls & Sidebar */}
         {imageSrc && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '20px' }}>
             {/* Control Sidebar */}
             <div style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '16px', border: '1px solid #334155', height: 'fit-content' }}>
-              <h3 style={{ fontSize: '16px', marginBottom: '14px', color: '#e2e8f0' }}>Target Aspect Ratio</h3>
+              <h3 style={{ fontSize: '16px', marginBottom: '14px', color: '#e2e8f0' }}>Manual Dimensions (Pixels)</h3>
 
-              {/* Social Presets Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '20px' }}>
-                {[
-                  { key: '1:1', label: '1:1 Square (Insta/DP)' },
-                  { key: '16:9', label: '16:9 (YouTube/Landscape)' },
-                  { key: '9:16', label: '9:16 (Reels/TikTok)' },
-                  { key: '3:4', label: '3:4 (Passport/Portrait)' }
-                ].map((p) => (
-                  <button
-                    key={p.key}
-                    onClick={() => setRatioPreset(p.key)}
-                    style={{
-                      padding: '10px 8px',
-                      backgroundColor: aspect === p.key ? '#38bdf8' : '#0f172a',
-                      color: aspect === p.key ? '#0f172a' : '#cbd5e1',
-                      border: '1px solid #334155',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      textAlign: 'center'
-                    }}
-                  >
-                    {p.label}
-                  </button>
-                ))}
+              {/* Exact Width & Height Inputs */}
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>Crop Width (px)</label>
+                  <input
+                    type="number"
+                    value={cropW}
+                    onChange={(e) => updateCrop(cropX, cropY, e.target.value, cropH)}
+                    style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>Crop Height (px)</label>
+                  <input
+                    type="number"
+                    value={cropH}
+                    onChange={(e) => updateCrop(cropX, cropY, cropW, e.target.value)}
+                    style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              {/* Cut Position (X and Y offset) */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                  <span style={{ color: '#94a3b8' }}>Horizontal Position (X)</span>
+                  <strong style={{ color: '#38bdf8' }}>{cropX} px</strong>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max={Math.max(0, imgDims.width - cropW)}
+                  value={cropX}
+                  onChange={(e) => updateCrop(e.target.value, cropY, cropW, cropH)}
+                  style={{ width: '100%', cursor: 'pointer' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                  <span style={{ color: '#94a3b8' }}>Vertical Position (Y)</span>
+                  <strong style={{ color: '#38bdf8' }}>{cropY} px</strong>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max={Math.max(0, imgDims.height - cropH)}
+                  value={cropY}
+                  onChange={(e) => updateCrop(cropX, e.target.value, cropW, cropH)}
+                  style={{ width: '100%', cursor: 'pointer' }}
+                />
+              </div>
+
+              {/* Fast Presets */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>Quick Size Presets:</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={() => applyPresetRatio('passport')} style={{ flex: 1, padding: '7px 4px', backgroundColor: '#0f172a', color: '#cbd5e1', border: '1px solid #334155', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>Passport (3.5×4.5)</button>
+                  <button onClick={() => applyPresetRatio('1:1')} style={{ flex: 1, padding: '7px 4px', backgroundColor: '#0f172a', color: '#cbd5e1', border: '1px solid #334155', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>1:1 Square</button>
+                  <button onClick={() => applyPresetRatio('16:9')} style={{ flex: 1, padding: '7px 4px', backgroundColor: '#0f172a', color: '#cbd5e1', border: '1px solid #334155', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>16:9 Landscape</button>
+                </div>
               </div>
 
               {/* Real-time KB Tracker */}
@@ -153,8 +208,8 @@ export default function CropPhoto() {
                   <span style={{ color: '#94a3b8' }}>Original Size:</span>
                   <strong style={{ color: '#e2e8f0' }}>{formatSize(originalSize)}</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', paddingTop: '8px', borderTop: '1px solid #1e293b' }}>
-                  <span style={{ color: '#38bdf8' }}>Cropped File Size:</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span style={{ color: '#38bdf8' }}>Cropped Output:</span>
                   <strong style={{ color: '#34d399' }}>{formatSize(croppedSize)}</strong>
                 </div>
               </div>
@@ -162,7 +217,7 @@ export default function CropPhoto() {
               <div style={{ display: 'flex', gap: '10px' }}>
                 <a
                   href={croppedImage}
-                  download={`cropped-${aspect}.jpg`}
+                  download={`cropped-${cropW}x${cropH}.jpg`}
                   style={{
                     flex: 1,
                     textAlign: 'center',
@@ -177,7 +232,7 @@ export default function CropPhoto() {
                     opacity: isProcessing ? 0.6 : 1
                   }}
                 >
-                  {isProcessing ? 'Processing...' : 'Download Crop'}
+                  {isProcessing ? 'Updating...' : 'Download Crop'}
                 </a>
                 <button
                   onClick={() => { setImageSrc(null); setCroppedImage(null); }}
@@ -191,7 +246,7 @@ export default function CropPhoto() {
             {/* Live Visual Preview */}
             <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '16px', border: '1px solid #334155', textAlign: 'center' }}>
               <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '10px' }}>
-                Preview Result ({aspect})
+                Live Output ({cropW} × {cropH} px)
               </div>
               {croppedImage && (
                 <img
