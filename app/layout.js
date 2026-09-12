@@ -1,4 +1,5 @@
- export const metadata = {
+import Script from 'next/script';
+export const metadata = {
   metadataBase: new URL('https://quickphotoeditor.vercel.app'),
   title: {
     default: 'QuickPhotoEditor - Free Online Image Compressor, Resizer & Editor',
@@ -90,6 +91,11 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3608428593956806"
+          crossOrigin="anonymous"
+        ></script> 
       </head>
       <body style={{ margin: 0, padding: 0, backgroundColor: '#0f172a' }}>
         {children}
